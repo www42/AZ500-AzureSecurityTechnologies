@@ -1,0 +1,81 @@
+az login
+az account list --all -o table
+az account set --subscription d2fa5fd5-b9b3-4c69-bf5a-24f823ab9183
+az group list -o table
+
+# Task 1
+# ------
+rgName='AZ500LAB09'
+location='eastus2'
+az group create --name $rgName  --location $location
+az group list --query "[?name=='$rgName']" -o table
+
+acrName="az500$RANDOM$RANDOM"
+az acr create --name $acrName --resource-group $rgName --sku Basic
+az acr list --resource-group $rgName \
+    --query "[].{name:name,loginServer:loginServer,location:location,adminUserEnabled:adminUserEnabled}" -o jsonc
+
+# Task 2
+# ------
+echo FROM nginx > Dockerfile
+ACRNAME=$(az acr list --resource-group AZ500LAB09 --query '[].{Name:name}' --output tsv)
+az acr build --image sample/nginx:v1 --registry $ACRNAME --file Dockerfile .
+az acr repository list --name $ACRNAME
+az acr repository show --name $ACRNAME --image sample/nginx:v1
+
+# Task 3
+# ------
+# Portal: Create Kubernetes Cluster
+#
+# wenn fertig:
+# new RG was created
+az group list --query "[].{name:name,location:location}" -o table
+
+az aks list --resource-group $rgName --query "[].{name:name,kubernetesVersion:kubernetesVersion,fqdn:fqdn}" -o table
+az aks get-credentials --resource-group AZ500LAB09 --name MyKubernetesCluster
+
+kubectl config get-clusters
+kubectl config get-contexts 
+kubectl config current-context
+
+kubectl get nodes
+
+# Task 4
+# ------
+ACRNAME=$(az acr list --resource-group AZ500LAB09 --query '[].{Name:name}' --output tsv)
+az aks update -n MyKubernetesCluster -g AZ500LAB09 --attach-acr $ACRNAME
+# Note: This command grants the ‘acrpull’ role assignment to the ACR.
+
+# Task 5
+# ------
+echo $ACRNAME
+
+#code ./nginxexternal.yaml
+cp Allfiles/Labs/09/nginxexternal.yaml tj/
+# edit tj/nginxexternal.yaml
+
+kubectl apply -f tj/nginxexternal.yaml
+
+# Task 6
+# ------
+kubectl get deployments
+kubectl get service
+kubectl get service nginxexternal
+
+# Task 7
+# ------
+# code ./nginxinternal.yaml
+cp Allfiles/Labs/09/nginxinternal.yaml tj/
+# edit tj/nginxinternal.yaml
+kubectl apply -f tj/nginxinternal.yaml
+
+# Task 8
+# ------
+kubectl get deployments
+kubectl get service
+# external -> Browser
+
+kubectl get pods
+kubectl exec -ti nginxexternal-866457f859-89n8h -- /bin/bash
+# now inside external pod
+curl http://10.240.0.35
