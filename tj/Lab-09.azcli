@@ -16,9 +16,10 @@ az acr list --resource-group $rgName \
 
 # Task 2
 # ------
+cd tj
 echo FROM nginx > Dockerfile
 ACRNAME=$(az acr list --resource-group AZ500LAB09 --query '[].{Name:name}' --output tsv)
-az acr build --image sample/nginx:v2 --registry $ACRNAME --file Dockerfile .
+az acr build --image sample/nginx:v1 --registry $ACRNAME --file Dockerfile .
 az acr repository list --name $ACRNAME
 az acr repository show --name $ACRNAME --image sample/nginx:v1
 
@@ -50,6 +51,7 @@ az aks update -n MyKubernetesCluster -g AZ500LAB09 --attach-acr $ACRNAME
 echo $ACRNAME
 
 #code ./nginxexternal.yaml
+cd ..
 cp Allfiles/Labs/09/nginxexternal.yaml tj/
 # edit tj/nginxexternal.yaml
 
@@ -75,6 +77,13 @@ kubectl get service
 # external -> Browser
 
 kubectl get pods
-kubectl exec -ti nginxinternal-597f896795-l2fkr -- /bin/bash
+kubectl exec -ti nginxinternal-757d858fcb-8mzjm -- /bin/bash
 # now inside external pod
 curl http://10.240.0.115
+
+
+# Clean up
+# --------
+rm tj/Dockerfile
+rm tj/nginxexternal.yaml
+rm tj/nginxinternal.yaml
