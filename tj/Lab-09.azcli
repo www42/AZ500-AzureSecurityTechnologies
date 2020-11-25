@@ -6,7 +6,7 @@ az group list -o table
 # Task 1
 # ------
 rgName='AZ500LAB09'
-location='eastus2'
+location='westeurope'
 az group create --name $rgName  --location $location
 az group list --query "[?name=='$rgName']" -o table
 
@@ -17,9 +17,15 @@ az acr list --resource-group $rgName \
 # Task 2
 # ------
 cd tj
+echo '<html><h1>Hello World!</h1></html>' > index.html
+
 echo FROM nginx > Dockerfile
+echo COPY index.html /usr/share/nginx/html >> Dockerfile
+
 ACRNAME=$(az acr list --resource-group AZ500LAB09 --query '[].{Name:name}' --output tsv)
+
 az acr build --image sample/nginx:v1 --registry $ACRNAME --file Dockerfile .
+
 az acr repository list --name $ACRNAME
 az acr repository show --name $ACRNAME --image sample/nginx:v1
 
@@ -77,7 +83,7 @@ kubectl get service
 # external -> Browser
 
 kubectl get pods
-kubectl exec -ti nginxinternal-757d858fcb-8mzjm -- /bin/bash
+kubectl exec -ti nginxexternal-cfdf47c6b-bgpml -- /bin/bash
 # now inside external pod
 curl http://10.240.0.115
 
